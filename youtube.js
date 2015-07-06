@@ -5,11 +5,52 @@ VideoDB = new Mongo.Collection('videos');
 if(Meteor.isClient){
     // All Helpers
     Template.player.helpers({
+        'checkEveryoneReady': function(){
+              
+        },
+        showGoButton: function(){
+            var uniqueURL = Session.get('watching');
+
+            var videoInfo = VideoDB.findOne({
+                uniqueURL: uniqueURL
+            });
+            if(videoInfo){
+                if(Session.get('userName') == videoInfo.createdBy || Session.get('GoClicked') == 'clicked'){
+                    return false;
+                }
+            }
+            return true;
+        },
+        showButton: function(){
+            if(this.name == Session.get('userName')){
+                return true;
+            }else{
+                return false;
+            }
+        },
         'HelperStatus': function(){
             return Session.get('playerStatus') || 'waiting';
         },
         'OnlineHelper': function(){
             return Session.get('OnlineError') || "";
+        },
+        'userNameHelper': function(){
+            var uniqueURL = Session.get('watching');
+
+            var videoInfo = VideoDB.findOne({
+                uniqueURL: uniqueURL
+            });
+            if(videoInfo){
+
+                //UserSession.set('watching', 'someone');
+                console.log(videoInfo.connected);
+                for (var i = 0, len = videoInfo.connected.length; i < len; i++) {
+
+                    //console.log(videoInfo.connected[i]);
+                }
+            }
+
+            return Spacebars.SafeString("<input id=\""+Session.get('userName')+"\" class=\"ready\" type=\"submit\" value=\"READY!\">");
         }
 
     });
@@ -25,11 +66,18 @@ if(Meteor.isClient){
             });
 
             if(getVideo){
-                var readyList = getVideo.ready;
-                var FriendName = this;
-
-                readyList.push(FriendName);
+                var list = getVideo.connected;
+                var FriendName = this.name;
+                console.log(FriendName.toString());
+                //readyList.push({name: FriendName.toString(), ready: 'yes'});
+                for(var i = 0; i < list.length; i++){
+                    if(list[i].name == FriendName){
+                        list[i].ready = 'yes';
+                    }
+                }
                 $("#"+FriendName).hide();
+
+                VideoDB.update({_id: getVideo._id}, {$set: {connected: list}});
             }
 
         },
@@ -56,9 +104,10 @@ if(Meteor.isClient){
 
 
                 Session.set('OnlineError', '');
-                list.push(FriendName);
+                list.push({name: FriendName.toString(), ready: 'nope'});
 
-                VideoDB.update({_id: getVideo._id}, {$set: {connected: list, status: 'READY!'}});
+                VideoDB.update({_id: getVideo._id}, {$set: {connected: list}});
+                Session.set('GoClicked', 'clicked');
                 //console.log(getVideo);
             }
         }
@@ -96,7 +145,7 @@ if(Meteor.isClient){
                 youtubeURL: videoURL,
                 uniqueURL: uniqueURL,
                 status: 'Waiting',
-                connected: [],
+                connected: [name],
                 ready: []
             });
 
@@ -162,13 +211,13 @@ if(Meteor.isClient){
         }
 
         this.render('player', {data: videoInfo});
-        console.log(Session.get('userName'));
+        //console.log(Session.get('userName'));
 
 
     });
 
     Router.route('/', function () {
-        document.body.innerHTML = '';
+        //document.body.innerHTML = '';
         this.render('index');
     })
     // Routes End

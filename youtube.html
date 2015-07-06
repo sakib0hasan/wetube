@@ -28,15 +28,24 @@
     <ul>
     {{#each connected}}
         <li>
-            {{this}}
-            <input id="{{this}}" class="ready" type="submit" value="READY!">
+            {{this.name}} | {{this.ready}}
+            {{#if showButton}}
+                <input id="{{this.name}}" class="ready" type="submit" value="Ready?">
+            {{else}}
+
+            {{/if}}
+
         </li>
     {{/each}}
     </ul>
+
+    {{#if showGoButton}}
     <form>
         <input id="FriendName" type="text" name="FriendName" value="">
         <input type="submit" value="GO!">{{OnlineHelper}}
     </form>
+    {{/if}}
+
 
     <h1>PLAYER:</h1>
     <div id="player">
