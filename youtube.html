@@ -1,0 +1,46 @@
+<head>
+  <title>youtube</title>
+</head>
+
+<body>
+
+</body>
+
+<template name="index">
+    <form>
+        <label>Your name</label>
+        <input id="name" type="text" name="name" value="Sakib Hasan">
+
+        <label>URL</label>
+        <input id="url" type="text" name="url" value="https://www.youtube.com/watch?v=YqeW9_5kURI">
+        <input type="submit" value="GO!">
+    </form>
+</template>
+
+
+<template name="player">
+    <h1>Lets watch</h1>
+    <h2>Created By:: {{createdBy}}</h2>
+    <h2>Youtube URL:: {{youtubeURL}}</h2>
+    <h2>STATUS:: {{status}}</h2>
+
+    <b style="color: red">ONLINE::</b>
+    <ul>
+    {{#each connected}}
+        <li>
+            {{this}}
+            <input id="{{this}}" class="ready" type="submit" value="READY!">
+        </li>
+    {{/each}}
+    </ul>
+    <form>
+        <input id="FriendName" type="text" name="FriendName" value="">
+        <input type="submit" value="GO!">{{OnlineHelper}}
+    </form>
+
+    <h1>PLAYER:</h1>
+    <div id="player">
+
+    </div>
+
+</template>
