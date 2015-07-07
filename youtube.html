@@ -22,7 +22,7 @@
     <h1>Lets watch</h1>
     <h2>Created By:: {{createdBy}}</h2>
     <h2>Youtube URL:: {{youtubeURL}}</h2>
-    <h2>STATUS:: {{status}}</h2>
+    <h2>STATUS:: {{status}} {{#if checkEveryoneReady}}| {{checkEveryoneReady}} {{/if}}</h2>
 
     <b style="color: red">ONLINE::</b>
     <ul>
@@ -46,9 +46,9 @@
     </form>
     {{/if}}
 
-
+    
     <h1>PLAYER:</h1>
-    <div id="player">
+    <div id="ytplayer">
 
     </div>
 

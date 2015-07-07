@@ -4,9 +4,142 @@ VideoDB = new Mongo.Collection('videos');
 
 if(Meteor.isClient){
     // All Helpers
+    var myplayer;
+    shallIplayVideo = function (){
+        var uniqueURL = Session.get('watching');
+
+        var videoInfo = VideoDB.findOne({
+            uniqueURL: uniqueURL
+        });
+        console.log();
+        if(videoInfo){
+            if(videoInfo.adminPlayed == 1 && Session.get('playerLoaded')){
+                console.log("Yeah, he clicked it.");
+                //$("#checkReady").trigger( "click" );
+                event.target.playVideo();
+                //myplayer.playVideo();
+                return "yeah";
+            }
+        }
+    }
+    LoadVideo = function (url){
+        // YouTube API will call onYouTubeIframeAPIReady() when API ready.
+        // Make sure it's a global variable.
+        onYouTubeIframeAPIReady = function () {
+
+            // New Video Player, the first argument is the id of the div.
+            // Make sure it's a global variable.
+            myplayer = new YT.Player("ytplayer", {
+
+                height: "400",
+                width: "600",
+
+                videoId: url,
+
+                // Events like ready, state change,
+                events: {
+
+                    onReady: function (event) {
+                        // Play video when player ready.
+                        //event.target.playVideo();
+                        Session.set('playerLoaded', true);
+                        console.log(event);
+
+                        var i = 0;
+                        (function theLoop (i) {
+                            setTimeout(function () {
+                                //alert("Cheese!");
+                                // DO SOMETHING WITH data AND stuff
+                                var uniqueURL = Session.get('watching');
+                                console.log("checking....");
+                                var videoInfo = VideoDB.findOne({
+                                    uniqueURL: uniqueURL
+                                });
+
+                                if(videoInfo){
+                                    if(videoInfo.adminPlayed == 1 && Session.get('playerLoaded')){
+                                        event.target.playVideo();
+                                    }
+                                }
+                                if (--i) {                  // If i > 0, keep going
+                                    theLoop(i);  // Call the loop again
+                                }
+                            }, 500);
+                        })(i);
+
+
+                        while(2==1){
+                        //setTimeout(function () {    //  call a 3s setTimeout when the loop is called
+                            //alert('hello');          //  your code here
+                            var uniqueURL = Session.get('watching');
+                            console.log("checking....");
+                            var videoInfo = VideoDB.findOne({
+                                uniqueURL: uniqueURL
+                            });
+
+                            if(videoInfo){
+                                if(videoInfo.adminPlayed == 1 && Session.get('playerLoaded')){
+                                    event.target.playVideo();
+                                }
+                            }
+                        }
+                        //setInterval(shallIplayVideo, 10);
+                        //console.log("player loaded");
+                    }
+                }
+            });
+        };
+        YT.load();
+    }
     Template.player.helpers({
+        'checkAdminPlayed': function(){
+            var uniqueURL = Session.get('watching');
+
+            var videoInfo = VideoDB.findOne({
+                uniqueURL: uniqueURL
+            });
+            console.log();
+            if(videoInfo){
+                if(videoInfo.adminPlayed == 1 && Session.get('playerLoaded')){
+                    console.log("Yeah, he clicked it.");
+                    $("#checkReady").trigger( "click" );
+                    //return "yeah";
+                    //myplayer.playVideo();
+                    return "yeah";
+                }
+            }
+        },
         'checkEveryoneReady': function(){
-              
+            var uniqueURL = Session.get('watching');
+
+            var videoInfo = VideoDB.findOne({
+                uniqueURL: uniqueURL
+            });
+
+            var joined = 0;
+            var ready = 0;
+
+            if(videoInfo){
+                if(videoInfo.connected.length > 1){
+                    for (var i = 0, len = videoInfo.connected.length; i < len; i++) {
+                        if(videoInfo.connected[i].ready == 'yes'){
+                            ready++;
+                            joined++;
+                        }else{
+                            joined++;
+                        }
+                    }
+                    if( joined == ready ){
+                        VideoDB.update({_id: videoInfo._id}, {$set: {status: "Everyone is ready. Waiting for admin to click PLAY :)"}});
+                    }else{
+                        VideoDB.update({_id: videoInfo._id}, {$set: {status: "Everyone is not ready yet."}});
+                    }
+                    return "joined "+joined+" | ready "+ready+".";
+
+                }else{
+                    VideoDB.update({_id: videoInfo._id}, {$set: {status: "No one connected yet."}});
+                }
+            }
         },
         showGoButton: function(){
             var uniqueURL = Session.get('watching');
@@ -29,33 +162,46 @@ if(Meteor.isClient){
             }
         },
         'HelperStatus': function(){
-            return Session.get('playerStatus') || 'waiting';
+            //return Session.get('playerStatus') || 'waiting';
         },
         'OnlineHelper': function(){
             return Session.get('OnlineError') || "";
-        },
-        'userNameHelper': function(){
+        }
+        //'userNameHelper': function(){
+        //    var uniqueURL = Session.get('watching');
+        //
+        //    var videoInfo = VideoDB.findOne({
+        //        uniqueURL: uniqueURL
+        //    });
+        //    if(videoInfo){
+        //        for (var i = 0, len = videoInfo.connected.length; i < len; i++) {
+        //
+        //        }
+        //    }
+        //
+        //    return Spacebars.SafeString("<input id=\""+Session.get('userName')+"\" class=\"ready\" type=\"submit\" value=\"READY!\">");
+        //}
+
+    });
+
+    Template.player.events({
+        'click #checkReady': function( event ){
+            console.log("clicked me");
             var uniqueURL = Session.get('watching');
 
             var videoInfo = VideoDB.findOne({
                 uniqueURL: uniqueURL
             });
+            console.log();
             if(videoInfo){
-
-                //UserSession.set('watching', 'someone');
-                console.log(videoInfo.connected);
-                for (var i = 0, len = videoInfo.connected.length; i < len; i++) {
-
-                    //console.log(videoInfo.connected[i]);
+                if(videoInfo.adminPlayed == 1){
+                    console.log("Yeah, he clicked it.");
+                    //return "yeah";
+                    //myplayer.playVideo();
+                    return "yeah";
                 }
             }
-
-            return Spacebars.SafeString("<input id=\""+Session.get('userName')+"\" class=\"ready\" type=\"submit\" value=\"READY!\">");
-        }
-
-    });
-
-    Template.player.events({
+        },
         'click .ready': function( event ){
             // READY BUTTON CLICKED
 
@@ -68,7 +214,13 @@ if(Meteor.isClient){
             if(getVideo){
                 var list = getVideo.connected;
                 var FriendName = this.name;
-                console.log(FriendName.toString());
+
+                if(FriendName.toString() == getVideo.createdBy){
+                    console.log("owner clicked");
+                    VideoDB.update({_id: getVideo._id}, {$set: {adminPlayed: 1}});
+                    //myplayer.playVideo();
+                }
+
                 //readyList.push({name: FriendName.toString(), ready: 'yes'});
                 for(var i = 0; i < list.length; i++){
                     if(list[i].name == FriendName){
@@ -145,11 +297,14 @@ if(Meteor.isClient){
                 youtubeURL: videoURL,
                 uniqueURL: uniqueURL,
                 status: 'Waiting',
-                connected: [name],
-                ready: []
+                connected: [{name: name.toString(), ready: 'yes'}],
+                ready: [],
+                adminPlayed: 0
             });
 
             Router.go('/watch/'+uniqueURL);
+
+            LoadVideo(videoURL);
         }
     });
 
@@ -158,40 +313,15 @@ if(Meteor.isClient){
 
     });
 
-    LoadVideo = function (url){
-        // YouTube API will call onYouTubeIframeAPIReady() when API ready.
-        // Make sure it's a global variable.
-        onYouTubeIframeAPIReady = function () {
 
-            // New Video Player, the first argument is the id of the div.
-            // Make sure it's a global variable.
-            player = new YT.Player("player", {
 
-                height: "400",
-                width: "600",
-
-                videoId: url,
-
-                // Events like ready, state change,
-                events: {
-
-                    onReady: function (event) {
-
-                        // Play video when player ready.
-                        //event.target.playVideo();
-                    }
-                }
-            });
-        };
-        YT.load();
-    }
 
 
     // Routes
     Router.route('/watch/:uniqueURL', function () {
         // HOUSEKEEPING
         Session.set('OnlineError', '');
-
+        console.log("yeah, i got to here.");
 
         var uniqueURL = this.params.uniqueURL;
 
@@ -212,7 +342,7 @@ if(Meteor.isClient){
 
         this.render('player', {data: videoInfo});
         //console.log(Session.get('userName'));
-
+        console.log("yeah, i got to here too.");
 
     });
 
